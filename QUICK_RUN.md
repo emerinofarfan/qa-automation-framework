@@ -331,13 +331,13 @@ Corren **siempre en secuencial** y **despues de todos los demas tests**.
 ```powershell
 # Correr TODA la suite: primero Regression (paralelo), luego Destructive (secuencial)
 # Este es el comando de CI/CD para el pipeline completo
-.\gradlew test testDestructive
+.\gradlew testAll
 
 # Correr SOLO los Destructive (en secuencial, aislado)
 .\gradlew testDestructive
 
 # Correr toda la suite con reporte incluido
-.\gradlew test testDestructive allureReport
+.\gradlew testAll allureReport
 ```
 
 > **Regla:** `@Destructive` NUNCA contra produccion. Solo en ambiente TEST con
@@ -422,6 +422,7 @@ Corren **siempre en secuencial** y **despues de todos los demas tests**.
 | `compileTestJava` | Compila el codigo de tests | Verificar que compila sin correr tests |
 | `test` | Corre la suite principal (excluye @Destructive) | Trabajo diario, CI/CD |
 | `testDestructive` | Corre solo @Destructive en secuencial | Al final del pipeline o aislado |
+| `testAll` | Corre `test` + `testDestructive` de forma explícita | Pipeline completo con opt-in destructivo |
 | `allureReport` | Genera el reporte HTML de Allure | Despues de cualquier `test` run |
 | `allureServe` | Levanta servidor Allure en vivo | Para revisar resultados rapidamente |
 | `checkstyleMain` | Verifica estilo con Checkstyle | Antes de hacer commit o MR |
