@@ -149,6 +149,28 @@ tasks.named('test').configure {
     // Si no se pasa -D, aplica el filtro por defecto (todo menos @Destructive).
     def tagFilter = System.getProperty('cucumber.filter.tags', 'not @Destructive')
     systemProperty 'cucumber.filter.tags', tagFilter
+
+    // Reenvia propiedades -D relevantes al proceso de tests (JVM fork de Gradle Test).
+    // Sin esto, flags como cucumber.execution.dry-run=true no llegan a Cucumber.
+    [
+        'cucumber.execution.dry-run',
+        'cucumber.execution.parallel.enabled',
+        'cucumber.execution.parallel.config.strategy',
+        'cucumber.execution.parallel.config.fixed.parallelism',
+        'cucumber.execution.parallel.config.fixed.max-pool-size',
+        'cucumber.filter.name',
+        'cucumber.features',
+        'base.url',
+        'luhn.url',
+        'test.username',
+        'test.password'
+    ].each { key ->
+        def value = System.getProperty(key)
+        if (value != null) {
+            systemProperty key, value
+        }
+    }
+
     testLogging {
         events 'passed', 'failed', 'skipped'
         showStandardStreams = false
