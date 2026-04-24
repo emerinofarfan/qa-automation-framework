@@ -153,7 +153,6 @@ tasks.named('test').configure {
         events 'passed', 'failed', 'skipped'
         showStandardStreams = false
     }
-    finalizedBy tasks.named('testDestructive')
 }
 
 // TestDestructive: ejecuta solo escenarios @Destructive en modo secuencial
@@ -171,6 +170,13 @@ tasks.register('testDestructive', Test) {
         events 'passed', 'failed'
         showStandardStreams = false
     }
+}
+
+// Suite completa opt-in: ejecución segura por defecto para equipos QA reutilizando el framework.
+tasks.register('testAll') {
+    group = 'verification'
+    description = 'Ejecuta la suite principal y, al final, los escenarios @Destructive de forma explícita.'
+    dependsOn tasks.named('test'), tasks.named('testDestructive')
 }
 
 checkstyle {

@@ -36,7 +36,10 @@ cp .env.example .env
 # Editar .env con la URL objetivo de tu aplicación
 
 # 3. Ejecutar pruebas
-./gradlew test --tags=@Smoke
+./gradlew test "-Dcucumber.filter.tags=@Smoke"
+
+# Opcional: ejecutar suite completa con destructivos (opt-in explícito)
+./gradlew testAll
 ```
 
 ### Generar reportes
