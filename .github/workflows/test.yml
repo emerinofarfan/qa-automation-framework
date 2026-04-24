@@ -1,0 +1,44 @@
+name: QA Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+    
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
+    
+    - name: Run tests
+      run: ./gradlew test
+    
+    - name: Generate Allure Report
+      if: always()
+      run: ./gradlew allureReport
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-report
+        path: build/reports/allure/allureReport/
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./build/reports/jacoco/test/jacocoTestReport.xml
+        flags: unittests
+        fail_ci_if_error: false

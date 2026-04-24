@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Configuracion de Logback para ejecucion de tests QA.
+  Se activa automaticamente en el classpath de test (logback-test.xml tiene prioridad sobre logback.xml).
+  Documentacion: https://logback.qos.ch/manual/configuration.html
+-->
+<configuration scan="false">
+
+    <!-- ====================================================================
+         APPENDER: Consola
+         Muestra logs en la terminal durante la ejecucion local.
+         En CI/CD los logs de consola van al job log de GitLab.
+    ===================================================================== -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%-5level] [%thread] %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ====================================================================
+         APPENDER: Archivo de log
+         Genera build/logs/test-execution.log para revision post-ejecucion.
+         Util en CI/CD donde no siempre se puede revisar la consola en tiempo real.
+    ===================================================================== -->
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>build/logs/test-execution.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%-5level] [%thread] %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ====================================================================
+         LOGGERS DE LIBRERIAS EXTERNAS
+         Reducir verbosidad de librerias que generan mucho ruido:
+    ===================================================================== -->
+
+    <!-- Selenium: WARNING para silenciar logs de ChromeDriver (muy verbosos) -->
+    <logger name="org.openqa.selenium" level="WARN" additivity="false">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- WebDriverManager: INFO para ver descarga/verificacion del driver -->
+    <logger name="io.github.bonigarcia" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Cucumber: INFO para ver el progreso de escenarios -->
+    <logger name="io.cucumber" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Allure: WARN para silenciar internals del reporte -->
+    <logger name="io.qameta.allure" level="WARN" additivity="false">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Apache HttpClient (usado por Allure/WDM): WARN para reducir ruido HTTP -->
+    <logger name="org.apache.http" level="WARN" additivity="false">
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- ====================================================================
+         LOGGER RAIZ
+         Nivel DEBUG para el codigo propio del framework (pages, steps, hooks, utils).
+         Nivel INFO para el resto de librerias no declaradas arriba.
+    ===================================================================== -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>

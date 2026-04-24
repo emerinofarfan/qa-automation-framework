@@ -1,0 +1,238 @@
+plugins {
+    id 'java'
+    id 'checkstyle'
+    id 'jacoco'
+    id 'com.diffplug.spotless' version '6.25.0'
+    id 'io.qameta.allure' version '2.12.0'
+}
+
+group = 'com.example.qaautomation'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+    options.charSet = 'UTF-8'
+    options.author = true
+    options.version = true
+}
+
+tasks.withType(Test).configureEach {
+    systemProperty 'file.encoding', 'UTF-8'
+    systemProperty 'sun.jnu.encoding', 'UTF-8'
+}
+
+repositories {
+    mavenCentral()
+}
+
+// ===========================================================================
+// GESTIÓN DE VERSIONES SEGURAS — Fuerza versiones parcheadas de dependencias
+// transitivas vulnerables detectadas por Checkmarx SCA.
+// ===========================================================================
+configurations.all {
+    resolutionStrategy {
+        // CVE-2022-1471 (CVSS 9.8): snakeyaml < 2.0 — Unsafe deserialization/code execution
+        force 'org.yaml:snakeyaml:2.3'
+        // CVE-2024-47554 (High): commons-io < 2.14.0 — Denial of service
+        force 'commons-io:commons-io:2.17.0'
+        // CVE-2023-2976 (High): guava < 32.0.0 — Temp directory local info disclosure
+        force 'com.google.guava:guava:33.4.8-jre'
+        // CVE-2023-43642 (High): snappy-java < 1.1.10.4 — DoS via unchecked chunk length
+        force 'org.xerial.snappy:snappy-java:1.1.10.7'
+        // Multiple CVEs: commons-compress < 1.26.0 — DoS via malformed archives
+        force 'org.apache.commons:commons-compress:1.27.1'
+        // CVE-2021-37533 (High): commons-net < 3.9.0 — FTP active mode SSRF
+        force 'commons-net:commons-net:3.11.1'
+        // CVE-2023-3635 (High): okio < 3.4.0 — Buffer overflow in readOrInflate
+        // okhttp4 (Selenium dependency) requires okio 3.x — safe to force to 3.x
+        force 'com.squareup.okio:okio:3.9.0'
+        // CVE-2021-3803 (High): nth-check < 2.0.1 — ReDoS (pulled via JS tooling paths)
+        // NOTE: lz4-java 1.8.0 (CVE-2025-12183/CVE-2025-66566) has no confirmed fix
+        // release as of scan date; monitor https://github.com/lz4/lz4-java for patch.
+    }
+}
+
+ext {
+    seleniumVersion         = '4.18.1'
+    cucumberVersion         = '7.18.1'
+    junitPlatformVersion    = '1.10.2'
+    allureVersion           = '2.27.0'
+    webdriverManagerVersion = '5.9.2'   // 5.8.0→5.9.2: usa snakeyaml 2.x, commons-io 2.15+
+    aspectjVersion          = '1.9.22'
+    logbackVersion          = '1.5.12'  // 1.5.3→1.5.12: parchea CVEs de logback
+    slf4jVersion            = '2.0.12'
+    assertjVersion          = '3.25.3'
+    awaitilityVersion       = '4.2.1'
+    ownerVersion            = '1.0.12'
+    lombokVersion           = '1.18.32'
+    extentReportsVersion    = '1.14.0'
+}
+
+dependencies {
+    // =========================================================================
+    // CONSTRAINTS — Versiones mínimas seguras para dependencias transitivas.
+    // Complementan el resolutionStrategy.force para análisis estático (CxSCA).
+    // =========================================================================
+    constraints {
+        // CVE-2022-1471 (CVSS 9.8): snakeyaml < 2.0 — Unsafe deserialization
+        implementation('org.yaml:snakeyaml:2.3') {
+            because 'CVE-2022-1471: snakeyaml < 2.0 permite ejecución de código arbitrario'
+        }
+        // CVE-2024-47554 (High): commons-io < 2.14.0 — DoS por lectura sin límite
+        implementation('commons-io:commons-io:2.17.0') {
+            because 'CVE-2024-47554: commons-io < 2.14.0 permite DoS'
+        }
+        // CVE-2023-2976 (High): guava < 32.0.0 — Creación de temp-dir insegura
+        implementation('com.google.guava:guava:33.4.8-jre') {
+            because 'CVE-2023-2976: guava < 32.0.0 expone información en temp dirs'
+        }
+        // CVE-2023-43642 (High): snappy-java < 1.1.10.4 — DoS
+        implementation('org.xerial.snappy:snappy-java:1.1.10.7') {
+            because 'CVE-2023-43642: snappy-java < 1.1.10.4 permite DoS'
+        }
+        // Multiple CVEs: commons-compress < 1.26.0 — DoS vía archivos malformados
+        implementation('org.apache.commons:commons-compress:1.27.1') {
+            because 'Múltiples CVEs: commons-compress < 1.26.0 permite DoS'
+        }
+        // CVE-2021-37533 (High): commons-net < 3.9.0 — FTP active mode SSRF
+        implementation('commons-net:commons-net:3.11.1') {
+            because 'CVE-2021-37533: commons-net < 3.9.0 expone SSRF via FTP activo'
+        }
+        // CVE-2023-3635 (High): okio < 3.4.0 — Buffer overflow en readOrInflate
+        implementation('com.squareup.okio:okio:3.9.0') {
+            because 'CVE-2023-3635: okio < 3.4.0 permite buffer overflow'
+        }
+    }
+
+    testImplementation "org.junit.platform:junit-platform-suite:${junitPlatformVersion}"
+    testImplementation "org.junit.platform:junit-platform-launcher:${junitPlatformVersion}"
+    implementation     "io.cucumber:cucumber-java:${cucumberVersion}"
+    testImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
+    implementation     "org.seleniumhq.selenium:selenium-java:${seleniumVersion}"
+    implementation     "io.github.bonigarcia:webdrivermanager:${webdriverManagerVersion}"
+    implementation     "io.qameta.allure:allure-cucumber7-jvm:${allureVersion}"
+    testImplementation "org.aspectj:aspectjweaver:${aspectjVersion}"
+    implementation     "tech.grasshopper:extentreports-cucumber7-adapter:${extentReportsVersion}"
+    implementation     "ch.qos.logback:logback-classic:${logbackVersion}"
+    implementation     "org.slf4j:slf4j-api:${slf4jVersion}"
+    testImplementation "org.assertj:assertj-core:${assertjVersion}"
+    testImplementation "org.awaitility:awaitility:${awaitilityVersion}"
+    implementation     "org.aeonbits.owner:owner:${ownerVersion}"
+    implementation     "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    implementation     'jakarta.validation:jakarta.validation-api:3.0.2'
+}
+
+allure {
+    version = allureVersion
+    autoconfigure = false   // Deshabilitado: usamos allure-cucumber7-jvm manual
+}
+
+// Test normal: ejecuta todo menos @Destructive (en paralelo si está habilitado)
+tasks.named('test').configure {
+    // includeEngines: solo el motor Suite para evitar doble ejecucion.
+    // Sin esto, JUnit Platform descubre tests via @Suite (Runner.java) Y via el motor
+    // cucumber directamente → cada escenario corre 2 veces.
+    useJUnitPlatform {
+        includeEngines 'junit-platform-suite'
+    }
+    // Permite sobreescribir el filtro desde CLI: gradle test "-Dcucumber.filter.tags=@Smoke"
+    // Si no se pasa -D, aplica el filtro por defecto (todo menos @Destructive).
+    def tagFilter = System.getProperty('cucumber.filter.tags', 'not @Destructive')
+    systemProperty 'cucumber.filter.tags', tagFilter
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        showStandardStreams = false
+    }
+    finalizedBy tasks.named('testDestructive')
+}
+
+// TestDestructive: ejecuta solo escenarios @Destructive en modo secuencial
+tasks.register('testDestructive', Test) {
+    useJUnitPlatform {
+        includeEngines 'junit-platform-suite'
+    }
+    description = 'Ejecuta solo escenarios @Destructive en modo secuencial.'
+    systemProperty 'cucumber.filter.tags', '@Destructive'
+    systemProperty 'cucumber.execution.parallel.enabled', 'false'
+    systemProperty 'cucumber.execution.parallel.config.fixed.parallelism', '1'
+    systemProperty 'cucumber.execution.parallel.config.fixed.max-pool-size', '1'
+    mustRunAfter tasks.named('test')
+    testLogging {
+        events 'passed', 'failed'
+        showStandardStreams = false
+    }
+}
+
+checkstyle {
+    toolVersion = '10.12.5'
+    configFile = file("${rootProject.projectDir}/config/checkstyle/checkstyle.xml")
+    ignoreFailures = false
+    showViolations = true
+}
+
+tasks.named('checkstyleMain') {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+jacoco {
+    toolVersion = '0.8.10'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir('jacoco/html')
+    }
+}
+
+spotless {
+    java {
+        target '**/*.java'
+        removeUnusedImports()
+        importOrder()
+        googleJavaFormat('1.17.0').aosp()
+        licenseHeader(
+            '/*\n' +
+            ' * Copyright (c) ${year} QA Automation Framework\n' +
+            ' * Internal, reusable testing framework.\n' +
+            ' */',
+            '(package|import|public|private|protected|static)'
+        ).updateYearWithLatest(true)
+    }
+    groovy {
+        target 'build.gradle', '**/*.gradle'
+        greclipse().configFile(file('config/spotless/greclipse.properties'))
+    }
+}
+
+tasks.register('validateCode') {
+    description = 'Ejecuta CheckStyle, JaCoCo y formatea con Spotless'
+    dependsOn 'checkstyleMain', 'spotlessApply', 'test', 'jacocoTestReport'
+}
+
+tasks.register('testJavadoc', Javadoc) {
+    group = 'documentation'
+    description = 'Genera JavaDoc HTML para clases de prueba en build/docs/test-javadoc.'
+    source = sourceSets.test.allJava
+    classpath = sourceSets.test.compileClasspath
+    destinationDir = layout.buildDirectory.dir('docs/test-javadoc').get().asFile
+    options.memberLevel = JavadocMemberLevel.PROTECTED
+    options.links('https://docs.oracle.com/en/java/javase/21/docs/api/')
+    options.addStringOption('Xdoclint:none', '-quiet')
+    failOnError = false
+}

@@ -1,0 +1,77 @@
+# Dockerfile.qa-runner — v2 (2026-03-21)
+# Imagen base para los jobs de QA Automation en el pipeline GitLab CI/CD.
+#
+# Contiene:
+#   - Java 21 (JDK) + Gradle 8.10.2 (base Ubuntu 24.04 Noble — 0 CVEs críticos de SO)
+#   - Google Chrome y ChromeDriver (headless)
+#   - webdrivermanager 5.9.2 + dependencias de seguridad pre-cacheadas
+#
+# Cambio de gradle:8.7-jdk21 (Ubuntu 22.04 Jammy) a gradle:8.10.2-jdk21-noble (Ubuntu 24.04
+# Noble) elimina los 31 CVEs críticos de golang-1.18, python3.10, openssl 3.0.x, expat 2.4.x.
+#
+# Uso (ver README — sección "Prerequisito: GitLab Container Registry"):
+#   docker build -t gradle-jdk21-chrome -f Dockerfile.qa-runner .
+#   docker tag gradle-jdk21-chrome $REGISTRY/gradle:8.10.2-jdk21-chrome
+#   docker push $REGISTRY/gradle:8.10.2-jdk21-chrome
+
+FROM gradle:8.10.2-jdk21-noble
+
+# Aplicar actualizaciones de seguridad del SO y eliminar paquetes innecesarios con CVEs.
+# - apt-get upgrade: asegura parches adicionales del SO post-imagen.
+# - golang/python3-pip: no necesarios para tests Selenium en Java.
+#   Noble (Ubuntu 24.04) ya no incluye golang-1.18; el remove es no-op si no existe.
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && (apt-get remove -y --purge \
+        golang-1.18 golang-1.18-go golang-1.18-src golang-go \
+        golang-1.22 golang-1.22-go golang-1.22-src \
+        python3-pip python3-distutils \
+        2>/dev/null || true) \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar Chrome y ChromeDriver (matching)
+# ChromeDriver se instala en la imagen para evitar descargas en CI (runners con internet lento).
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    unzip \
+    --no-install-recommends \
+    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" \
+       > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update && apt-get install -y \
+    google-chrome-stable \
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/* \
+    && CHROME_VERSION=$(google-chrome-stable --version | grep -oP '[\d.]+') \
+    && wget -q \
+       "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
+       -O /tmp/chromedriver.zip \
+    && unzip -q /tmp/chromedriver.zip -d /tmp/ \
+    && mv /tmp/chromedriver-linux64/chromedriver /usr/bin/chromedriver \
+    && chmod +x /usr/bin/chromedriver \
+    && rm -rf /tmp/chromedriver*
+
+# Variables de entorno.
+# /qa-gradle-deps: ruta específica para QA, poco probable que los runners la monten.
+ENV CHROME_BIN=/usr/bin/google-chrome-stable \
+    CHROMEDRIVER_PATH=/usr/bin/chromedriver \
+    JAVA_OPTS="-Xmx2048m" \
+    GRADLE_USER_HOME=/qa-gradle-deps
+
+# Pre-cachear dependencias en la imagen Docker.
+# El before_script del CI copia /qa-gradle-deps → ${CI_PROJECT_DIR}/.gradle-home
+# antes de que Gradle corra, evitando descargas en el job.
+WORKDIR /qa-automation
+COPY build.gradle settings.gradle ./
+RUN gradle dependencies --no-daemon -q
+RUN mkdir -p build/allure-results && \
+    printf '{"uuid":"ci-warmup","name":"warmup","status":"passed","start":0,"stop":0}' \
+        > build/allure-results/warmup-result.json && \
+    gradle allureReport --no-daemon -q && \
+    rm -rf build/ && \
+    chmod -R 777 /qa-gradle-deps
+
+# Directorio de trabajo del proyecto QA dentro del runner
+WORKDIR /qa-automation
