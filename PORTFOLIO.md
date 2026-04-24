@@ -1,5 +1,9 @@
 # QA Automation Framework - Portfolio Project
 
+Spanish version: [PORTFOLIO.es.md](PORTFOLIO.es.md)
+
+Source of truth: English. Use the Spanish version for local presentation and bilingual outreach.
+
 ## Project Overview
 
 This is a production-ready QA automation framework extracted from enterprise environments. It demonstrates professional-grade testing architecture suitable for financial services, healthcare, and other regulated industries.

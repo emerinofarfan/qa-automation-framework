@@ -2,6 +2,10 @@
 
 An enterprise-grade test automation framework built with Java 21, Gradle, Selenium, and Cucumber. Production-tested architecture suitable for financial services, healthcare, and regulated industries.
 
+Spanish version: [README.es.md](README.es.md)
+
+Source of truth: English. The Spanish version is maintained for onboarding, local adoption, and bilingual presentation.
+
 ## 🎯 What This Framework Demonstrates
 
 ✅ **BDD Approach**: Feature files in Gherkin language for clear test scenarios
@@ -164,5 +168,3 @@ MIT License - Feel free to use in your projects
 ---
 
 **Last Updated**: 2026-04-24 | **Version**: 1.0.0 - Portfolio Edition
-
-Proyecto de portafolio para mostrar capacidades de automatizacion QA y liderazgo tecnico.
