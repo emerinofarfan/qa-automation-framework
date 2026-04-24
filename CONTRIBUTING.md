@@ -1,5 +1,9 @@
 # Contributing to QA Automation Framework
 
+Spanish version: [CONTRIBUTING.es.md](CONTRIBUTING.es.md)
+
+Source of truth: English. Keep the Spanish copy aligned when updating onboarding or contribution guidance.
+
 ## Using This Repository
 
 ### Option 1: Reference Implementation
