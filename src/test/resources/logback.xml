@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Silenciar logback interno -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
+    <!-- Importar configuración de propiedades si existe -->
+    <property resource="application.properties" />
+
+    <!-- Variables de configuracion -->
+    <property name="LOG_DIR" value="./build/logs" />
+    <property name="LOG_FILE_NAME" value="test-execution" />
+
+    <!-- Patron completo para archivo (auditoria bancaria) -->
+    <property name="LOG_PATTERN_DETAILED" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%thread] %logger{36} - %msg%n" />
+
+    <!-- Patron limpio para consola con colores (Windows Terminal) -->
+    <property name="LOG_PATTERN_CONSOLE" value="%cyan(%d{HH:mm:ss.SSS}) %highlight(%-5level) %magenta([%thread]) %yellow(%logger{36}) - %msg%n" />
+
+    <!-- Console Appender - SOLO CRÍTICO -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <encoder>
+            <pattern>${LOG_PATTERN_CONSOLE}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- File Appender (archivo de log rotativo - AUDITORIA COMPLETA) -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/${LOG_FILE_NAME}.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN_DETAILED}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/${LOG_FILE_NAME}-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- Async Appender (escritura asincronica para mejor rendimiento) -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <appender-ref ref="FILE" />
+    </appender>
+
+    <!-- ============================================================================
+         SILENCIAMIENTO DE LIBRERIAS INTERNAS
+         ============================================================================ -->
+
+    <!-- Selenium WebDriver - SILENCIAR -->
+    <logger name="org.openqa.selenium" level="WARN" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+    <logger name="org.seleniumhq" level="WARN" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <!-- ChromeDriver - SILENCIAR logs de CDP (mas no guardar en archivo) -->
+    <logger name="org.openqa.selenium.chromium" level="ERROR" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <!-- CDP Version Finder - SILENCIAR warnings sobre version mismatch -->
+    <logger name="org.openqa.selenium.devtools.CdpVersionFinder" level="ERROR" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <!-- AspectJ (usado por Allure para @Step) - SILENCIAR excepto ERRORS -->
+    <logger name="org.aspectj" level="ERROR" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <!-- WebDriverManager - INFO suficiente (sin DEBUG) -->
+    <logger name="io.github.bonigarcia.wdm" level="INFO" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <!-- Cucumber - Solo al archivo -->
+    <logger name="io.cucumber" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_FILE" />
+    </logger>
+
+    <!-- Allure - Solo al archivo -->
+    <logger name="io.qameta.allure" level="WARN" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <!-- ExtentReports - Solo al archivo -->
+    <logger name="com.aventstack.extentreports" level="WARN" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <!-- Apache HTTP Client - SILENCIAR -->
+    <logger name="org.apache.http" level="WARN" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <!-- Logger para tu aplicacion (pe.cajapiura) - INFO en consola con colores -->
+    <logger name="pe.cajapiura" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_FILE" />
+    </logger>
+
+    <!-- Loggers para tus steps y pages - Solo al archivo -->
+    <logger name="steps" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_FILE" />
+    </logger>
+    <logger name="pages" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_FILE" />
+    </logger>
+    <logger name="hooks" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_FILE" />
+    </logger>
+
+    <!-- Logger raiz: Solo errores en consola, todo en archivo -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_FILE" />
+    </root>
+
+</configuration>

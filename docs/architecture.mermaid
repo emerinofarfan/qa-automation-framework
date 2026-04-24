@@ -1,0 +1,112 @@
+---
+title: Arquitectura CI/CD — Luhn Verification Application (GitLab Flow)
+---
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '14px'}}}%%
+
+graph TB
+    subgraph DEVELOPERS["👥 Equipos"]
+        DEV["Equipo de<br/>Desarrollo"]
+        LEAD["Líder<br/>Técnico"]
+        BIZ["Área de<br/>Negocio"]
+        SEC["Seguridad<br/>Informática"]
+        OPS["Operaciones<br/>TI"]
+        CAB["Comité de<br/>Cambios (CAB)"]
+    end
+
+    subgraph GITLAB["🦊 GitLab 18 (On-Premise) — GitLab Flow"]
+        direction TB
+        REPO["Repositorio Git<br/>master → staging → production"]
+
+        subgraph PIPELINE["Pipeline CI/CD"]
+            direction LR
+            S1["🏗️ Provision<br/>(Ansible + vCenter)"]
+            S2["🔥 Firewall<br/>(Ansible + Panorama)"]
+            S3["📋 GLPI<br/>(Registro CMDB)"]
+            S4["🔍 SAST<br/>(GitLab Templates)"]
+            S5["🧪 Test<br/>(JUnit 5 + Jest)"]
+            S6["📦 Build<br/>(Maven + npm)"]
+            S7["🚀 Deploy"]
+            S8["🏷️ Tag<br/>(SemVer)"]
+        end
+
+        S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8
+
+        MR_DEV["MR: feature → master<br/>1 approval (peer)"]
+        MR_UAT["MR: master → staging<br/>2 approvals (Líder + QA)"]
+        MR_PROD["MR: staging → production<br/>3 approvals (CAB)"]
+    end
+
+    subgraph INFRA["🖥️ VMware vCenter"]
+        direction TB
+        subgraph ENV_DEV["Desarrollo (master)"]
+            VM_DEV["VM Dev<br/>JBoss EAP 8"]
+        end
+        subgraph ENV_UAT["UAT (staging)"]
+            VM_UAT["VM UAT<br/>JBoss EAP 8"]
+        end
+        subgraph ENV_PROD["Producción (production)"]
+            VM_PROD1["VM Prod 01<br/>JBoss EAP 8"]
+            VM_PROD2["VM Prod 02<br/>JBoss EAP 8"]
+            LB["Load<br/>Balancer"]
+        end
+    end
+
+    subgraph PALOALTO["🛡️ Palo Alto"]
+        PANORAMA["Panorama<br/>(Gestión Centralizada)"]
+        FW["Firewalls<br/>PA Series"]
+    end
+
+    subgraph ITSM["📝 GLPI 10.0.18"]
+        CMDB["CMDB<br/>(Activos)"]
+        TICKETS["Tickets de<br/>Cambio"]
+        SW_REG["Registro de<br/>Software"]
+    end
+
+    subgraph APP["📱 Aplicación"]
+        FRONTEND["React 18<br/>(Frontend)"]
+        BACKEND["Java 17<br/>Jakarta EE 10<br/>(Backend)"]
+        FRONTEND --> BACKEND
+    end
+
+    %% Flujos de aprobación (GitLab Flow)
+    DEV -->|"MR feature → master"| MR_DEV
+    LEAD -->|"MR master → staging"| MR_UAT
+    BIZ -->|"Conformidad UAT"| MR_PROD
+    SEC -->|"Valida SAST + FW"| MR_PROD
+    CAB -->|"Aprueba MR"| MR_PROD
+    OPS -->|"Ejecuta deploy:prod"| S7
+
+    MR_DEV --> REPO
+    MR_UAT --> REPO
+    MR_PROD --> REPO
+    REPO --> PIPELINE
+
+    S1 -->|"API VMware"| INFRA
+    S2 -->|"API REST"| PANORAMA
+    PANORAMA --> FW
+    S3 -->|"API REST"| ITSM
+    S7 -->|"master"| VM_DEV
+    S7 -->|"staging"| VM_UAT
+    S7 -->|"production"| LB
+    LB --> VM_PROD1
+    LB --> VM_PROD2
+
+    FW -.->|"Protege"| ENV_DEV
+    FW -.->|"Protege"| ENV_UAT
+    FW -.->|"Protege"| ENV_PROD
+
+    APP -->|"WAR"| S6
+
+    classDef gitlab fill:#e24329,stroke:#333,color:#fff
+    classDef infra fill:#0077b6,stroke:#333,color:#fff
+    classDef security fill:#d62828,stroke:#333,color:#fff
+    classDef itsm fill:#2a9d8f,stroke:#333,color:#fff
+    classDef team fill:#6366f1,stroke:#333,color:#fff
+    classDef app fill:#7c3aed,stroke:#333,color:#fff
+
+    class GITLAB,REPO,PIPELINE,MR_DEV,MR_UAT,MR_PROD gitlab
+    class INFRA,VM_DEV,VM_UAT,VM_PROD1,VM_PROD2,LB infra
+    class PALOALTO,PANORAMA,FW security
+    class ITSM,CMDB,TICKETS,SW_REG itsm
+    class DEVELOPERS,DEV,LEAD,BIZ,SEC,OPS,CAB team
+    class APP,FRONTEND,BACKEND app

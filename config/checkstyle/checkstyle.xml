@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Configuración Checkstyle para el Framework QA Automation — Caja Piura.
+  Versión compatible: Checkstyle 10.x (Gradle plugin toolVersion 10.12.5).
+
+  Objetivo: capturar errores de codificación comunes sin bloquear al equipo
+  con reglas de estilo que Spotless ya maneja (sangría, formato, imports).
+
+  Reglas activas (agrupadas):
+  ┌──────────────────────────────────────────┬───────────────────────────────────────────────┐
+  │ Categoría                                │ Qué se verifica                               │
+  ├──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Javadoc                                  │ Clases públicas documentadas                  │
+  │ Naming                                   │ Convenciones Java estándar                    │
+  │ Imports                                  │ Sin importaciones duplicadas ni *             │
+  │ Size                                     │ Métodos ≤ 80 líneas, clases ≤ 600 líneas     │
+  │ Whitespace                               │ Sin espacios de tabulación mezclados          │
+  │ Coding                                   │ Sin variables sin usar, equals correcto, etc. │
+  │ Misc                                     │ Archivo termina en newline                    │
+  └──────────────────────────────────────────┴───────────────────────────────────────────────┘
+
+  Spotless (Google Java Format) ya maneja:
+  - Sangría (2 espacios)
+  - Longitud máxima de línea (100)
+  - Llaves de bloque
+  - Orden de imports
+
+  Por lo tanto, NO se configuran aquí esas reglas para evitar conflictos.
+-->
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="error"/>
+    <property name="fileExtensions" value="java"/>
+
+    <!-- ====================================================================
+         FILTROS: excluir código generado y clases de ejemplo/demo
+    ===================================================================== -->
+    <module name="BeforeExecutionExclusionFileFilter">
+        <!-- Excluir archivos generados por Lombok, JAXB, etc. -->
+        <property name="fileNamePattern" value=".*[\\/]generated[\\/].*\.java$"/>
+    </module>
+
+    <!-- ====================================================================
+         ARCHIVO: newline al final (requisito de git y herramientas Unix)
+    ===================================================================== -->
+    <module name="NewlineAtEndOfFile">
+        <property name="lineSeparator" value="lf_cr_crlf"/>
+    </module>
+
+    <!-- ====================================================================
+         TAMAÑO DE ARCHIVO: clases demasiado largas son señal de God Object
+    ===================================================================== -->
+    <module name="FileLength">
+        <!-- Máximo 600 líneas por archivo Java (excluye comentarios y blancos) -->
+        <property name="max" value="600"/>
+    </module>
+
+    <module name="TreeWalker">
+
+        <!-- ================================================================
+             JAVADOC — Clases y métodos públicos deben estar documentados
+        ================================================================ -->
+        <module name="JavadocMethod">
+            <property name="accessModifiers" value="public"/>
+            <property name="allowMissingParamTags" value="true"/>
+            <property name="allowMissingReturnTag" value="true"/>
+        </module>
+        <module name="MissingJavadocMethod">
+            <property name="scope" value="public"/>
+            <!-- Ignorar setters/getters y constructores triviales -->
+            <property name="allowMissingPropertyJavadoc" value="true"/>
+            <!-- Ignorar métodos de test (anotados con @Test, @Given, @When, @Then, etc.) -->
+            <property name="ignoreMethodNamesRegex" value="^(test|given|when|then|and|but|setUp|tearDown|before|after).*"/>
+        </module>
+        <module name="MissingJavadocType">
+            <property name="scope" value="public"/>
+            <!-- No exigir Javadoc en clases de steps/hooks (anotadas con Cucumber) -->
+            <property name="excludeScope" value="nothing"/>
+        </module>
+
+        <!-- ================================================================
+             NAMING CONVENTIONS — Convenciones Java estándar
+        ================================================================ -->
+        <!-- Clases y enums: PascalCase -->
+        <module name="TypeName">
+            <property name="format" value="^[A-Z][a-zA-Z0-9]*$"/>
+        </module>
+        <!-- Métodos: camelCase -->
+        <module name="MethodName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+        <!-- Variables locales y parámetros: camelCase -->
+        <module name="LocalVariableName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+        <module name="ParameterName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+        <!-- Constantes estáticas: UPPER_SNAKE_CASE -->
+        <module name="ConstantName">
+            <property name="format" value="^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+        </module>
+        <!-- Campos de instancia: camelCase (permitir _ en ThreadLocal, etc.) -->
+        <module name="MemberName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+        <!-- Paquetes: minúsculas sin guiones -->
+        <module name="PackageName">
+            <property name="format" value="^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)*$"/>
+        </module>
+
+        <!-- ================================================================
+             IMPORTS — Limpieza de importaciones
+        ================================================================ -->
+        <!-- Prohibir importaciones duplicadas -->
+        <module name="RedundantImport"/>
+        <!-- Prohibir importaciones no usadas -->
+        <module name="UnusedImports">
+            <!-- Permitir imports usados solo en Javadoc -->
+            <property name="processJavadoc" value="true"/>
+        </module>
+        <!-- Prohibir importaciones con wildcard (import java.util.*) -->
+        <module name="AvoidStarImport"/>
+        <!-- Prohibir importaciones de java.sun.* (APIs internas de la JVM) -->
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="sun, com.sun"/>
+        </module>
+
+        <!-- ================================================================
+             TAMAÑO — Evitar métodos/clases monstruosas
+        ================================================================ -->
+        <!-- Máximo 80 líneas por método (steps/hooks: hasta 100) -->
+        <module name="MethodLength">
+            <property name="max" value="80"/>
+            <property name="countEmpty" value="false"/>
+        </module>
+        <!-- Máximo 7 parámetros por método -->
+        <module name="ParameterNumber">
+            <property name="max" value="7"/>
+        </module>
+
+        <!-- ================================================================
+             WHITESPACE — Coherencia básica (Spotless maneja el grueso)
+        ================================================================ -->
+        <!-- Sin mezcla de tabulaciones y espacios -->
+        <module name="FileTabCharacter">
+            <property name="eachLine" value="false"/>
+        </module>
+        <!-- Sin espacios al final de línea -->
+        <module name="Regexp">
+            <property name="format" value="[ \t]+$"/>
+            <property name="illegalPattern" value="true"/>
+            <property name="message" value="Trailing whitespace."/>
+        </module>
+
+        <!-- ================================================================
+             CODING — Prácticas de codificación correctas
+        ================================================================ -->
+        <!-- Siempre usar llaves en if/else/for/while/do -->
+        <module name="NeedBraces">
+            <property name="allowSingleLineStatement" value="false"/>
+            <property name="allowEmptyLoopBody" value="false"/>
+        </module>
+        <!-- equals() debe llamarse sobre el literal, no sobre variable que puede ser null -->
+        <module name="EqualsAvoidNull"/>
+        <!-- hashCode debe estar presente si equals está sobreescrito -->
+        <module name="EqualsHashCode"/>
+        <!-- Sin variables locales que oculten variables del ámbito superior -->
+        <module name="HiddenField">
+            <property name="ignoreConstructorParameter" value="true"/>
+            <property name="ignoreSetter" value="true"/>
+            <property name="ignoreAbstractMethods" value="true"/>
+        </module>
+        <!-- Sin instanciación directa de tipos wrapper (usar autoboxing) -->
+        <module name="IllegalInstantiation">
+            <property name="classes" value="java.lang.Boolean,java.lang.Integer,java.lang.Long,java.lang.Double"/>
+        </module>
+        <!-- Sin comparaciones innecesarias con boolean literal -->
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+        <!-- Sin cadenas de String concatenadas con + en loops (usar StringBuilder) -->
+        <module name="StringLiteralEquality"/>
+        <!-- Declarar variables lo más cerca posible de su uso -->
+        <module name="VariableDeclarationUsageDistance">
+            <property name="allowedDistance" value="5"/>
+        </module>
+        <!-- Evitar bloques catch vacíos sin comentario explicativo -->
+        <module name="EmptyCatchBlock">
+            <property name="exceptionVariableName" value="ignored|expected"/>
+        </module>
+        <!-- Evitar bloques catch que capturan Exception genérica sin razón -->
+        <module name="IllegalCatch">
+            <property name="illegalClassNames" value="java.lang.Error,java.lang.Throwable"/>
+        </module>
+        <!-- Sin anotaciones @SuppressWarnings sin justificación (excepto "unchecked") -->
+        <module name="SuppressWarnings">
+            <property name="format" value="^(?!unchecked$|rawtypes$|serial$|deprecation$|unused$).*$"/>
+        </module>
+
+        <!-- ================================================================
+             MISC
+        ================================================================ -->
+        <!-- Cada archivo Java debe terminar con un carácter de nueva línea -->
+        <module name="UpperEll"/>
+        <!-- Usar L en lugar de l para literales long (1000L no 1000l) -->
+        <module name="ArrayTypeStyle"/>
+        <!-- Usar estilo Java en arrays (String[] args, no String args[]) -->
+        <module name="OuterTypeFilename"/>
+        <!-- El nombre del tipo público debe coincidir con el nombre del archivo -->
+        <module name="TodoComment">
+            <!-- Advertir (no error) en TODO/FIXME para que sean visibles en reportes -->
+            <property name="severity" value="warning"/>
+            <property name="format" value="(TODO|FIXME|HACK|XXX):"/>
+        </module>
+
+    </module>
+
+</module>

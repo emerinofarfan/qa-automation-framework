@@ -1,0 +1,6 @@
+# Public portfolio version: keep ownership lightweight and generic.
+* @equipo-qa-arquitectura
+/docs/** @equipo-qa-arquitectura
+/src/** @equipo-qa-arquitectura
+/.gitlab-ci.yml @equipo-qa-arquitectura
+/.gitlab/ci/** @equipo-qa-arquitectura
