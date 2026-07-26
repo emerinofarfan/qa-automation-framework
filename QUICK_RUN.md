@@ -63,8 +63,8 @@ Si es tu primer dia con el framework, usa exactamente esta secuencia:
 # Abre: build/reports/allure-report/allureReport/index.html
 ```
 
-> Si falla el paso 2, no avances. Revisa
-> [docs/01-onboarding/TROUBLESHOOTING_AUTOMATION.md](docs/01-onboarding/TROUBLESHOOTING_AUTOMATION.md)
+> Si falla el paso 2, no avances. Revisa la seccion de solucion de problemas
+> mas abajo antes de continuar.
 
 ---
 
@@ -125,7 +125,7 @@ El tiempo total es el del escenario mas largo, no la suma de todos.
 | CI nightly / XL        | 8–12               | 7 GB       | Headless (auto) |
 
 > **Formula RAM:** `N_hilos × 300 MB + 800 MB JVM`. Con 3 hilos: ~1,700 MB.
-> El modo headless es automatico cuando `CI=true` (GitLab lo define). En local,
+> El modo headless es automatico cuando `CI=true` (los runners de CI lo definen). En local,
 > forzar headless con: `$env:BROWSER_HEADLESS="true"` antes del comando.
 >
 > Aumentar hilos sin validar el runner genera flakiness. Escalar en pasos: 3 → 5 → 8.
@@ -341,8 +341,7 @@ Corren **siempre en secuencial** y **despues de todos los demas tests**.
 ```
 
 > **Regla:** `@Destructive` NUNCA contra produccion. Solo en ambiente TEST con
-> datos de prueba controlados. Ver
-> [docs/02-governance/GESTION_DE_ENTORNOS.md](docs/02-governance/GESTION_DE_ENTORNOS.md).
+> datos de prueba controlados.
 >
 > **Por que secuencial:** los tests destructivos suelen depender de un estado especifico
 > del sistema. En paralelo podrian colisionar entre si o con otros tests.

@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <h3>App piloto</h3>
  * <p>Los tests apuntan a la URL configurada en {@link ConfigManager#getLuhnUrl()}.
- * En CI/CD configurar la variable {@code LUHN_BASE_URL} en GitLab CI/CD Settings.
+ * En CI/CD configurar la variable {@code LUHN_BASE_URL} en la configuracion de CI/CD.
  * En local: ajustar {@code luhn.url} en {@code config.properties}.
  */
 public class LuhnVerificacionSteps {

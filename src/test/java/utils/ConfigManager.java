@@ -98,7 +98,7 @@ public class ConfigManager {
     public static String getLuhnUrl() {
         String value = getCredential("LUHN_BASE_URL", "luhn.url", "luhn.url");
         // Validar que el valor sea una URL real (comienza con http).
-        // Si la variable de GitLab CI no está definida, YAML deja el literal
+        // Si la variable de CI no está definida, YAML deja el literal
         // "${LUHN_BASE_URL}" como valor — no es una URL válida, usar fallback.
         if (value.isBlank() || !value.startsWith("http")) {
             return "https://portaldesar:8444/luhn-verification/";

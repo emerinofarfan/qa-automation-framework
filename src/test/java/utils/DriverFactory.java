@@ -135,14 +135,14 @@ public class DriverFactory {
         options.setExperimentalOption("prefs", prefs);
 
         // ─── Headless: automático en CI, opcional en local ────────────────
-        // GitLab CI siempre define la variable de entorno CI=true.
+        // el runner de CI siempre define la variable de entorno CI=true.
         // En local se puede forzar con: set BROWSER_HEADLESS=true (Windows)
         //                                export BROWSER_HEADLESS=true (Linux/Mac)
         //
         // Headless reduce ~30-40% RAM/CPU por instancia (200-300 MB vs 400-600 MB).
         // Obligatorio para parallelism >= 4 en runners sin pantalla o con RAM limitada.
         // Prioridad de activación headless (de mayor a menor):
-        // 1. CI=true  → GitLab define esto automáticamente en todos sus jobs.
+        // 1. CI=true  → el runner de CI define esto automáticamente en todos sus jobs.
         // 2. BROWSER_HEADLESS=true → override manual en local o scripts.
         // 3. browser.headless=true en config.properties → configuración por proyecto.
         boolean headless = "true".equalsIgnoreCase(System.getenv("CI"))

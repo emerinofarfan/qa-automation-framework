@@ -9,7 +9,7 @@
     <!-- ====================================================================
          APPENDER: Consola
          Muestra logs en la terminal durante la ejecucion local.
-         En CI/CD los logs de consola van al job log de GitLab.
+         En CI/CD los logs de consola van al job log del runner de CI.
     ===================================================================== -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

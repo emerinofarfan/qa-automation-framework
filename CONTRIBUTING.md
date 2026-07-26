@@ -50,7 +50,6 @@ cp .env.example .env
 - `src/test/java/` - Test code (pages, steps, hooks, utilities)
 - `src/test/resources/` - Feature files and test configuration
 - `build.gradle` - Build configuration and dependencies
-- `docs/` - Documentation and architecture
 
 ## Questions?
 
